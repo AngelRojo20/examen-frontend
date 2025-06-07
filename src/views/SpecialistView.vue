@@ -6,7 +6,7 @@
           <h2 class="text-h5 font-weight-bold">Especialistas Activos</h2>
         </v-col>
         <v-col cols="auto">
-          <v-btn color="primary" v-if="!mostrarFormulario" @click="mostrarFormulario = true">
+          <v-btn color="primary" v-if="!mostrarFormulario" @click="iniciarCreacion">
             <v-icon icon="mdi-plus" start />
             Crear
           </v-btn>
@@ -15,8 +15,9 @@
 
       <SpecialistForm
         v-if="mostrarFormulario"
+        :modelo="especialistaSeleccionado"
         @guardar="confirmarEspecialista"
-        @cancelar="mostrarFormulario = false"
+        @cancelar="cancelarFormulario"
         @error="mostrarError"
       />
     </v-card>
@@ -38,14 +39,28 @@
             </li>
           </ul>
         </template>
+
+        <template #item.acciones="{ item }">
+          <v-btn icon color="blue" @click="iniciarEdicion(item)">
+            <v-icon icon="mdi-pencil" />
+          </v-btn>
+        </template>
       </v-data-table>
     </v-card>
 
     <!-- Modal de confirmación -->
     <v-dialog v-model="dialogoConfirmacion" max-width="500">
       <v-card>
-        <v-card-title class="text-h6">¿Confirmar creación?</v-card-title>
-        <v-card-text>¿Estás seguro de que deseas guardar este especialista?</v-card-text>
+        <v-card-title class="text-h6">
+          {{ modoFormulario === 'crear' ? '¿Confirmar creación?' : '¿Confirmar edición?' }}
+        </v-card-title>
+        <v-card-text>
+          {{
+            modoFormulario === 'crear'
+              ? '¿Estás seguro de que deseas guardar este especialista?'
+              : '¿Deseas guardar los cambios realizados?'
+          }}
+        </v-card-text>
         <v-card-actions class="justify-end">
           <v-btn text @click="dialogoConfirmacion = false">Cancelar</v-btn>
           <v-btn color="primary" @click="guardarEspecialista">Confirmar</v-btn>
@@ -75,6 +90,8 @@ const cargando = ref(false)
 const mostrarFormulario = ref(false)
 const dialogoConfirmacion = ref(false)
 const datosPendientes = ref<any>(null)
+const modoFormulario = ref<'crear' | 'editar'>('crear')
+const especialistaSeleccionado = ref<any>(null)
 
 const snackbar = ref({
   mostrar: false,
@@ -87,6 +104,7 @@ const headers = [
   { title: 'Especialidad', key: 'especialidad' },
   { title: 'Registro', key: 'registroProfesional' },
   { title: 'Horarios', key: 'horarios' },
+  { title: 'Acciones', key: 'acciones', sortable: false },
 ]
 
 async function cargarEspecialistas() {
@@ -104,6 +122,24 @@ async function cargarEspecialistas() {
   }
 }
 
+function iniciarCreacion() {
+  modoFormulario.value = 'crear'
+  especialistaSeleccionado.value = null
+  mostrarFormulario.value = true
+}
+
+function iniciarEdicion(especialista: any) {
+  modoFormulario.value = 'editar'
+  especialistaSeleccionado.value = especialista
+  mostrarFormulario.value = true
+}
+
+function cancelarFormulario() {
+  mostrarFormulario.value = false
+  especialistaSeleccionado.value = null
+  modoFormulario.value = 'crear'
+}
+
 function confirmarEspecialista(datos: any) {
   datosPendientes.value = datos
   dialogoConfirmacion.value = true
@@ -111,17 +147,28 @@ function confirmarEspecialista(datos: any) {
 
 async function guardarEspecialista() {
   try {
-    await SpecialistService.create(datosPendientes.value)
+    if (modoFormulario.value === 'crear') {
+      await SpecialistService.create(datosPendientes.value)
+    } else {
+      console.log('🧪 PATCH con:', especialistaSeleccionado.value.id, datosPendientes.value)
+      await SpecialistService.update(especialistaSeleccionado.value.id, datosPendientes.value)
+    }
+
     await cargarEspecialistas()
     mostrarFormulario.value = false
     dialogoConfirmacion.value = false
 
     snackbar.value = {
       mostrar: true,
-      mensaje: 'Especialista creado exitosamente',
+      mensaje:
+        modoFormulario.value === 'crear'
+          ? 'Especialista creado exitosamente'
+          : 'Especialista actualizado correctamente',
       color: 'success',
     }
   } catch (error: any) {
+    console.log('❌ Error al guardar:', error)
+
     snackbar.value = {
       mostrar: true,
       mensaje: error?.message || 'Ocurrió un error al guardar',
