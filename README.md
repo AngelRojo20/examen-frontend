@@ -1,39 +1,77 @@
-# frontend-examen
+# 🩺 Gestión de Especialistas - Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+Este proyecto es el frontend del sistema de gestión de especialistas médicos. Permite realizar operaciones CRUD, gestionar horarios dinámicos, y aplicar validaciones tanto en el cliente como en el servidor. La interfaz está construida con Vue 3 + TypeScript y Vuetify.
 
-## Recommended IDE Setup
+## 🚀 Tecnologías
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- [Vue 3](https://vuejs.org/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vuetify 3](https://vuetifyjs.com/)
+- [Vite](https://vitejs.dev/)
+- [Pinia](https://pinia.vuejs.org/)
+- `fetch` nativo para consumo de API
 
-## Type Support for `.vue` Imports in TS
+## 📂 Estructura
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+src/
+├── components/
+│ └── SpecialistForm.vue # Formulario reutilizable
+├── layouts/
+│ └── WireframeLayout.vue # Estructura principal con header y router-view
+├── services/
+│ └── SpecialistService.ts # Conexión con el backend usando fetch
+├── views/
+│ ├── SpecialistView.vue # Vista principal (activos)
+│ └── SpecialistInactivesView.vue # Vista de inactivos con restaurar/eliminar
+├── router/
+│ └── index.ts # Definición de rutas
+├── App.vue
+└── main.ts
 
-## Customize configuration
+## ✅ Funcionalidades
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+### Especialistas Activos
 
-## Project Setup
+- Crear especialista con horarios múltiples
+- Editar especialista
+- Eliminar especialista (soft delete)
+- Validación visual de campos requeridos
+- Validación de traslapes de horarios en el backend
+- Feedback con `Snackbar`
 
-```sh
-npm install
-```
+### Especialistas Inactivos
 
-### Compile and Hot-Reload for Development
+- Restaurar especialista
+- Eliminar definitivamente
+- Confirmación modal en ambas acciones
 
-```sh
-npm run dev
-```
+## 🛠 Instalación
 
-### Type-Check, Compile and Minify for Production
+1. Clona el repositorio:
 
-```sh
-npm run build
-```
+   ```bash
+   git clone https://github.com/tu-usuario/frontend-especialistas.git
+   cd frontend-especialistas
 
-### Lint with [ESLint](https://eslint.org/)
+   ```
 
-```sh
-npm run lint
-```
+2. Instala dependencias:
+   npm install
+
+3. Ejecuta el servidor:
+   npm run dev
+
+🔗 El frontend está configurado para comunicarse con el backend en http://localhost:3333. Puedes ajustar esto en services/SpecialistService.ts.
+
+## 📸 Capturas
+
+### Especialistas Activos
+
+![Especialistas Activos](docs/captura-activos.png)
+
+### Especialistas Inactivos
+
+![Especialistas Inactivos](docs/captura-inactivos.png)
+
+🧠 Autor
+Desarrollado como parte del Examen Técnico Fullstack Junior (SENA - Junio 2025).
