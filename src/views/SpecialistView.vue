@@ -5,10 +5,14 @@
         <v-col cols="auto">
           <h2 class="text-h5 font-weight-bold">Especialistas Activos</h2>
         </v-col>
-        <v-col cols="auto">
+        <v-col cols="auto" class="d-flex ga-2">
           <v-btn color="primary" v-if="!mostrarFormulario" @click="iniciarCreacion">
             <v-icon icon="mdi-plus" start />
             Crear
+          </v-btn>
+          <v-btn color="secondary" @click="irAVistaInactivos">
+            <v-icon icon="mdi-account-off" start />
+            Inactivos
           </v-btn>
         </v-col>
       </v-row>
@@ -44,11 +48,14 @@
           <v-btn icon color="blue" @click="iniciarEdicion(item)">
             <v-icon icon="mdi-pencil" />
           </v-btn>
+          <v-btn icon color="red" @click="confirmarEliminacion(item)">
+            <v-icon icon="mdi-delete" />
+          </v-btn>
         </template>
       </v-data-table>
     </v-card>
 
-    <!-- Modal de confirmación -->
+    <!-- Modal de confirmación creación/edición -->
     <v-dialog v-model="dialogoConfirmacion" max-width="500">
       <v-card>
         <v-card-title class="text-h6">
@@ -64,6 +71,22 @@
         <v-card-actions class="justify-end">
           <v-btn text @click="dialogoConfirmacion = false">Cancelar</v-btn>
           <v-btn color="primary" @click="guardarEspecialista">Confirmar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Modal de confirmación eliminación -->
+    <v-dialog v-model="dialogoEliminar" max-width="500">
+      <v-card>
+        <v-card-title class="text-h6">¿Confirmar eliminación?</v-card-title>
+        <v-card-text>
+          ¿Estás seguro de que deseas eliminar al especialista
+          <strong>{{ especialistaAEliminar?.nombreCompleto }}</strong
+          >?
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn text @click="dialogoEliminar = false">Cancelar</v-btn>
+          <v-btn color="red" @click="eliminarEspecialista">Eliminar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -84,14 +107,18 @@
 import { ref, onMounted } from 'vue'
 import SpecialistForm from '@/components/SpecialistForm.vue'
 import { SpecialistService } from '@/services/SpecialistService'
+import { useRouter } from 'vue-router'
 
 const especialistas = ref<any[]>([])
 const cargando = ref(false)
 const mostrarFormulario = ref(false)
 const dialogoConfirmacion = ref(false)
+const dialogoEliminar = ref(false)
 const datosPendientes = ref<any>(null)
 const modoFormulario = ref<'crear' | 'editar'>('crear')
 const especialistaSeleccionado = ref<any>(null)
+const especialistaAEliminar = ref<any>(null)
+const router = useRouter()
 
 const snackbar = ref({
   mostrar: false,
@@ -106,6 +133,10 @@ const headers = [
   { title: 'Horarios', key: 'horarios' },
   { title: 'Acciones', key: 'acciones', sortable: false },
 ]
+
+function irAVistaInactivos() {
+  router.push('/especialistas/inactivos')
+}
 
 async function cargarEspecialistas() {
   cargando.value = true
@@ -145,12 +176,35 @@ function confirmarEspecialista(datos: any) {
   dialogoConfirmacion.value = true
 }
 
+function confirmarEliminacion(especialista: any) {
+  especialistaAEliminar.value = especialista
+  dialogoEliminar.value = true
+}
+
+async function eliminarEspecialista() {
+  try {
+    await SpecialistService.inactivar(especialistaAEliminar.value.id)
+    await cargarEspecialistas()
+    dialogoEliminar.value = false
+    snackbar.value = {
+      mostrar: true,
+      mensaje: 'Especialista eliminado correctamente',
+      color: 'success',
+    }
+  } catch (error: any) {
+    snackbar.value = {
+      mostrar: true,
+      mensaje: error?.message || 'Error al eliminar especialista',
+      color: 'red',
+    }
+  }
+}
+
 async function guardarEspecialista() {
   try {
     if (modoFormulario.value === 'crear') {
       await SpecialistService.create(datosPendientes.value)
     } else {
-      console.log('🧪 PATCH con:', especialistaSeleccionado.value.id, datosPendientes.value)
       await SpecialistService.update(especialistaSeleccionado.value.id, datosPendientes.value)
     }
 
@@ -167,8 +221,6 @@ async function guardarEspecialista() {
       color: 'success',
     }
   } catch (error: any) {
-    console.log('❌ Error al guardar:', error)
-
     snackbar.value = {
       mostrar: true,
       mensaje: error?.message || 'Ocurrió un error al guardar',
